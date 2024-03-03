@@ -33,7 +33,7 @@
         <div class="col-md-8">
           <div class="card-body">
             <h5 class="card-title">{{ result.profile.user.username }}</h5>
-            <p class="card-text"><a href="{% url 'result.profile' profile.user.id %}">@{{ result.profile.user.username|lower }}</a></p>
+            <p class="card-text"><a href="{% url 'profile' result.profile.user.id %}">@{{ result.profile.user.username|lower }}</a></p>
             <br/><br/>
             <p class="card-text"><small class="text-muted">Last Updated: {{ result.profile.date_modified }}</small></p>
           </div>
