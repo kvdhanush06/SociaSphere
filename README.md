@@ -1,6 +1,7 @@
 # SociaSphere
 Summary: A website where people can share their ideas to the community, safely and efficiently.
 
+Demo Video: https://youtu.be/pIHj1mT5XzU
 
 ### Program Info
 **Python version**: *3.12.2*,  **Packages used**: *django, Pillow*<br /><br />
