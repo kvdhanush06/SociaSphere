@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="container text-center">
+        <div class="row">
+            <div class="col-8">
+                <h1>Posts!</h1>
+                <br/>
+                {% for post in posts %}
+                    <div class="alert alert-dark" role="alert">
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-1">
+                                    {% if post.user.profile.profile_image %}
+                                        <img src="{{ post.user.profile.profile_image.url }}" width=50 height=50 class="rounded-circle" alt="{{ post.user.username }}">
+                                    {% else %}
+                                        <img src="{% static 'images/default_profile_pic.png' %}" width=50 height=50 class="rounded-circle" alt="{{ post.user.username }}">	
+                                    {% endif %}
+                                </div>
+                                <div class="col-11">
+                                    {{ post.body }}<br/>
+                                    <small class="text-muted">
+                                        ({{ post.created_at}}) By 
+                                        @{{ post.user.username }}
+                                        &nbsp;&nbsp;
+                                        {{ post.number_of_likes }}  
+
+                                        {% if user in post.likes.all %}
+                                            <a href="{% url 'post_like' post.id %}">
+                                                <i class="fa-solid fa-heart" style="color:red"></i>
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'post_like' post.id %}">
+                                                <i class="fa fa-heart-o" style="color:red"></i>
+                                            </a>
+                                        {% endif %}
+                                        &nbsp;&nbsp;
+                                        <a href="{% url 'post_show' post.id %}">
+                                            <i class="fa-solid fa-share" style="color:gray"></i>
+                                        </a>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="col-4">
+                <br/><br/><br/>
+                {% if form %}
+                    <form method="POST">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-secondary">Post</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
