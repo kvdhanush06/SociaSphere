@@ -1,5 +1,6 @@
 .vscode/
 venv/
+__pycache__/
 Sociasphere1.png
 Sociasphere2.png
 Sociasphere3.png
