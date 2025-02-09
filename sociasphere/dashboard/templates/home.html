@@ -15,16 +15,16 @@
                                     {% if post.user.profile.profile_image %}
                                         <img src="{{ post.user.profile.profile_image.url }}" width=50 height=50 class="rounded-circle" alt="{{ post.user.username }}">
                                     {% else %}
-                                        <img src="{% static 'images/default_profile_pic.png' %}" width=50 height=50 class="rounded-circle" alt="{{ post.user.username }}">	
+                                        <img src="{% static 'images/default_profile_pic.png' %}" width=50 height=50 class="rounded-circle" alt="{{ post.user.username }}">
                                     {% endif %}
                                 </div>
                                 <div class="col-11">
                                     {{ post.body }}<br/>
                                     <small class="text-muted">
-                                        ({{ post.created_at}}) By 
+                                        ({{ post.created_at}}) By
                                         @{{ post.user.username }}
                                         &nbsp;&nbsp;
-                                        {{ post.number_of_likes }}  
+                                        {{ post.number_of_likes }}
 
                                         {% if user in post.likes.all %}
                                             <a href="{% url 'post_like' post.id %}">
@@ -36,7 +36,7 @@
                                             </a>
                                         {% endif %}
                                         &nbsp;&nbsp;
-                                        <a href="{% url 'post_show' post.id %}">
+                                        <a href="{% url 'post_show' post.id %}" class="share-post" data-url="{% url 'post_show' post.id %}">
                                             <i class="fa-solid fa-share" style="color:gray"></i>
                                         </a>
                                     </small>
@@ -58,4 +58,18 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.querySelectorAll('.share-post').forEach(function(element) {
+            element.addEventListener('click', function(event) {
+                event.preventDefault();
+                const url = this.getAttribute('data-url');
+                navigator.clipboard.writeText(url).then(function() {
+                    alert('URL copied to clipboard');
+                }, function(err) {
+                    console.error('Could not copy text: ', err);
+                });
+            });
+        });
+    </script>
 {% endblock %}
