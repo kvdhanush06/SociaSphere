@@ -20,4 +20,5 @@ urlpatterns = [
     path('edit_post/<int:pk>', views.edit_post, name="edit_post"),
     path('search/', views.search, name='search'),
     path('search_user/', views.search_user, name='search_user'),
+    path('share_post/<int:pk>', views.share_post, name='share_post'),
 ]

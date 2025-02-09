@@ -13,19 +13,19 @@
                             {% if post.user.profile.profile_image %}
                                 <img src="{{ post.user.profile.profile_image.url }}" width=50 height=50 class="rounded-circle" alt="{{ post.user.username }}">
                             {% else %}
-                                <img src="{% static 'images/default_profile_pic.png' %}" width=50 height=50 class="rounded-circle" alt="{{ post.user.username }}">	
+                                <img src="{% static 'images/default_profile_pic.png' %}" width=50 height=50 class="rounded-circle" alt="{{ post.user.username }}">
                             {% endif %}
                         </div>
 
                         <div class="col-11">
                             {{ post.body }}<br/>
                             <small class="text-muted">
-                                ({{ post.created_at}}) By 
+                                ({{ post.created_at}}) By
                                 @{{ post.user.username }}
-                                - {{ post.number_of_likes }} Likes - 
+                                - {{ post.number_of_likes }} Likes -
 
                                 {% if user in post.likes.all %}
-                                    <a href="{% url 'post_unlike' post.id %}">
+                                    <a href="{% url 'post_like' post.id %}">
                                         <i class="fa-solid fa-heart" style="color:red"></i>
                                     </a>
                                 {% else %}
@@ -33,7 +33,10 @@
                                         <i class="fa fa-heart-o" style="color:red"></i>
                                     </a>
                                 {% endif %}
-
+                                &nbsp;&nbsp;
+                                <a href="{% url 'share_post' post.id %}">
+                                    <i class="fa-solid fa-share" style="color:gray"></i>
+                                </a>
                             </small>
                         </div>
                     </div>

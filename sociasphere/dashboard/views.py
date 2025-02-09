@@ -295,3 +295,16 @@ def search_user(request):
         return render(request, 'search_user.html', {'search': search, 'searched': searched})
     else:
         return render(request, 'search_user.html', {})
+
+
+def share_post(request, pk):
+    if request.user.is_authenticated:
+        post = get_object_or_404(Post, id=pk)
+        # Create a new post with the same content
+        new_post = Post.objects.create(user=request.user, body=post.body)
+        new_post.save()
+        messages.success(request, ("The Post Has Been Shared!"))
+        return redirect('home')
+    else:
+        messages.success(request, ("You Must Be Logged In To Share Posts..."))
+        return redirect('home')
