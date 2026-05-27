@@ -1,23 +1,45 @@
 # SociaSphere
-Summary: A website where people can share their ideas to the community, safely and efficiently.
 
-Demo Video: https://youtu.be/pIHj1mT5XzU
+SociaSphere is a Django-based social community platform where people can share ideas with others in a simple and focused way. Users can register, create posts, discover other people on the platform, follow accounts, and engage with content through likes and sharing.
 
-### Program Info
-**Python version**: *3.12.2*,  **Packages used**: *django, Pillow*<br /><br />
-In Sociasphere, you can register if you are a new user, and then you get access to post your ideas to the world. You can search for other users on the platform and search for specific posts by users too. You can see the posts of people you follow on your home page and can like them, share them to your friends. You can change your username from the profile section after yo login and even add profile image and bio and add other social media links.
+## Live Access
+
+- Live site: https://sociasphere.onrender.com/
+- Demo video: https://youtu.be/pIHj1mT5XzU
+
+## Overview
+
+SociaSphere is designed as a lightweight social-sharing platform for community-driven posting. After signing up, users can publish ideas, explore posts from others, follow profiles they like, and personalize their own profile with a bio, profile image, and social links.
+
+## Features
+
+- User registration and login using Django authentication.
+- Create and share posts with the community.
+- Search for users on the platform.
+- Search for posts by different users.
+- Follow other users and view their posts on your homepage feed.
+- Like posts and share them with friends.
+- Update your profile, including username, profile picture, bio, and social media links.
+- Browse a profile list of users and visit their pages.
+
+## Sections
 
 ### Registration
-You have to sign up and create a new account in the website for the first time and then login anywhere, anytime and can access the platform.
+New users can sign up for an account and then log in anytime to access the platform.
 
 ### Profile Section
-You can see all your posts and can see all the followers and the accounts you are following and can update your username, change your profile picture, upload a bio and mention your other social media links. <br />
+Users can view all of their posts, see followers and following counts, update their username, upload a profile image, add a bio, and attach social media links.
 
-### Search Users Section
-You can search for users on the platform to follow them and get the content they post on their profile onto your homepage, whenever they post something.
+### Search Users
+Users can search for other people on the platform, follow them, and receive their content in the home feed.
 
-### Search Posts Section
-You can search for posts by different users and can like them and share them with your friends.
+### Search Posts
+Users can search for posts by other users, then like and share them.
 
-### Profile List Section
-You can see all the users on the platform in this place and can go to their page to view their posts and follow them for future updates, they post.
+### Profile List
+Users can browse all profiles on the platform, open profile pages, and follow accounts for future updates.
+
+## Program Info
+
+- Python version: 3.12.2
+- Main packages used: Django, Pillow
