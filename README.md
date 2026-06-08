@@ -1,45 +1,163 @@
 # SociaSphere
 
-SociaSphere is a Django-based social community platform where people can share ideas with others in a simple and focused way. Users can register, create posts, discover other people on the platform, follow accounts, and engage with content through likes and sharing.
+Social networking platform that enables users to create profiles, share content, discover communities, and engage through an interactive social feed.
 
-## Live Access
+**Live:** https://sociasphere.onrender.com/
 
-- Live site: https://sociasphere.onrender.com/
-- Demo video: https://youtu.be/pIHj1mT5XzU
+**Demo:** https://youtu.be/pIHj1mT5XzU
 
-## Overview
+## Problem
 
-SociaSphere is designed as a lightweight social-sharing platform for community-driven posting. After signing up, users can publish ideas, explore posts from others, follow profiles they like, and personalize their own profile with a bio, profile image, and social links.
+Online communities rely on user-generated content, social connections, and content discovery. Building these experiences requires authentication systems, profile management, relationship modeling, feed generation, and engagement workflows.
+
+SociaSphere explores these core social platform concepts through a community-focused web application.
 
 ## Features
 
-- User registration and login using Django authentication.
-- Create and share posts with the community.
-- Search for users on the platform.
-- Search for posts by different users.
-- Follow other users and view their posts on your homepage feed.
-- Like posts and share them with friends.
-- Update your profile, including username, profile picture, bio, and social media links.
-- Browse a profile list of users and visit their pages.
+### User Authentication
 
-## Sections
+* User registration
+* Secure login and logout
+* Session-based authentication
+* User account management
 
-### Registration
-New users can sign up for an account and then log in anytime to access the platform.
+### Profile Management
 
-### Profile Section
-Users can view all of their posts, see followers and following counts, update their username, upload a profile image, add a bio, and attach social media links.
+Users can:
 
-### Search Users
-Users can search for other people on the platform, follow them, and receive their content in the home feed.
+* Update usernames
+* Upload profile images
+* Add personal bios
+* Attach social media links
+* View personal activity
 
-### Search Posts
-Users can search for posts by other users, then like and share them.
+### Content Sharing
 
-### Profile List
-Users can browse all profiles on the platform, open profile pages, and follow accounts for future updates.
+* Create posts
+* Publish ideas
+* Share content with the community
+* Manage personal posts
 
-## Program Info
+### Social Interactions
 
-- Python version: 3.12.2
-- Main packages used: Django, Pillow
+* Follow users
+* View follower counts
+* View following counts
+* Like posts
+* Share posts
+
+### Discovery
+
+#### User Search
+
+* Search platform users
+* Discover creators
+* Follow accounts directly
+
+#### Post Search
+
+* Search content across the platform
+* Discover community discussions
+
+#### Profile Directory
+
+* Browse community members
+* Access user profiles
+* Explore new accounts
+
+## Architecture
+
+SociaSphere follows a server-side rendered architecture using Django.
+
+### Core Modules
+
+* Authentication System
+* Profile Management
+* Feed Generation
+* User Discovery
+* Post Management
+* Social Relationship System
+
+### Data Relationships
+
+The platform models:
+
+* Users
+* Profiles
+* Posts
+* Followers
+* Following relationships
+* Likes
+
+These relationships drive feed generation and social interactions throughout the application.
+
+## Tech Stack
+
+### Backend
+
+* Python
+* Django
+
+### Database
+
+* PostgreSQL
+
+### Frontend
+
+* HTML
+* CSS
+* Django Templates
+
+### Media Management
+
+* Pillow
+
+## Key Engineering Highlights
+
+* Built secure session-based authentication workflows using Django's authentication framework.
+* Developed relationship-driven social features including follows, likes, and profile interactions.
+* Implemented user and content discovery through search functionality.
+* Optimized feed retrieval using relationship prefetching and database query improvements.
+* Designed user profile management workflows with media upload support.
+
+## Project Structure
+
+```text
+SociaSphere/
+├── users/
+├── profiles/
+├── posts/
+├── templates/
+├── static/
+├── media/
+├── manage.py
+└── README.md
+```
+
+## Local Development
+
+### Clone Repository
+
+```bash
+git clone https://github.com/kvdhanush06/SociaSphere.git
+
+cd SociaSphere
+```
+
+### Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### Run Migrations
+
+```bash
+python manage.py migrate
+```
+
+### Start Development Server
+
+```bash
+python manage.py runserver
+```
