@@ -161,3 +161,9 @@ python manage.py migrate
 ```bash
 python manage.py runserver
 ```
+
+---
+
+## Built by
+
+**Venkata Dhanush Kakarlamudi** — [Portfolio](https://portfolio.allkvd.dev/)
