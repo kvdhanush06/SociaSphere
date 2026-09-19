@@ -1,8 +1,8 @@
 asgiref==3.8.1
-Django==5.1.6
-pillow==11.1.0
-sqlparse==0.5.3
+Django==5.1.15
+pillow==12.2.0
+sqlparse==0.5.4
 tzdata==2025.1
-gunicorn==21.2.0
+gunicorn==22.0.0
 whitenoise==6.6.0
 pyperclip==1.9.0
