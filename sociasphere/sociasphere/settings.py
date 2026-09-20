@@ -3,15 +3,17 @@ Django settings for SociaSphere.
 """
 
 import os
+import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 DEBUG = os.environ.get('DEBUG', 'False').strip().lower() == 'true'
+IS_TESTING = 'test' in sys.argv
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
-    if DEBUG:
+    if DEBUG or IS_TESTING:
         SECRET_KEY = 'django-insecure-local-development-only'
     else:
         raise RuntimeError('SECRET_KEY must be set when DEBUG=False')
@@ -87,11 +89,9 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Bound request/upload sizes to reduce memory and resource-exhaustion risk.
 DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
-# Production security headers/cookie settings.
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
