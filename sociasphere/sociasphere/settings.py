@@ -5,7 +5,6 @@ Django settings for SociaSphere.
 import os
 import sys
 from pathlib import Path
-from urllib.parse import urlparse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -66,33 +65,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'sociasphere.wsgi.application'
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if DATABASE_URL:
-    parsed = urlparse(DATABASE_URL)
-    if parsed.scheme not in {'postgres', 'postgresql'}:
-        raise RuntimeError('DATABASE_URL must use the postgres:// or postgresql:// scheme')
-
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': parsed.path.lstrip('/'),
-            'USER': parsed.username,
-            'PASSWORD': parsed.password,
-            'HOST': parsed.hostname,
-            'PORT': str(parsed.port or 5432),
-            'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', '60')),
-            'CONN_HEALTH_CHECKS': True,
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
-elif DEBUG or IS_TESTING:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-else:
-    raise RuntimeError('DATABASE_URL must be set when DEBUG=False')
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
