@@ -15,9 +15,9 @@
                                     <div class="row">
                                         <div class="col-1">
                                             {% if profile.profile_image %}
-                                                <img src="{{ profile.profile_image.url }}" width=50 height=50 class="rounded-circle" alt="{{ profile.user.username }}">
+                                                <img src="{{ profile.profile_image.url }}" width="50" height="50" class="rounded-circle" alt="{{ profile.user.username }}">
                                             {% else %}
-                                                <img src="{% static 'images/default_profile_pic.png' %}" width=50 height=50 class="rounded-circle" alt="{{ profile.user.username }}">
+                                                <img src="{% static 'images/default_profile_pic.png' %}" width="50" height="50" class="rounded-circle" alt="{{ profile.user.username }}">
                                             {% endif %}
                                         </div>
                                         <div class="col-11">
@@ -26,18 +26,30 @@
                                                 ({{ post.created_at }}) By
                                                 @{{ post.user.username }}
                                                 - {{ post.number_of_likes }} Likes -
-                                                {% if user in post.likes.all %}
-                                                    <a href="{% url 'post_like' post.id %}"><i class="fa-solid fa-heart" style='color:red'></i></a>
-                                                {% else %}
-                                                    <a href="{% url 'post_like' post.id %}"><i class="fa fa-heart-o" style="color:red"></i></a>
+                                                {% if user.is_authenticated %}
+                                                    <form method="POST" action="{% url 'post_like' post.id %}" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-link p-0 border-0 align-baseline" aria-label="Toggle like for post by {{ post.user.username }}">
+                                                            {% if user in post.likes.all %}
+                                                                <i class="fa-solid fa-heart" style="color:red"></i>
+                                                            {% else %}
+                                                                <i class="fa fa-heart-o" style="color:red"></i>
+                                                            {% endif %}
+                                                        </button>
+                                                    </form>
                                                 {% endif %}
                                                 &nbsp;&nbsp;
                                                 <a href="{% url 'post_show' post.id %}"><i class="fa-solid fa-share" style="color:gray"></i></a>
-                                                {% if request.user.username == profile.user.username %}
+                                                {% if request.user.id == post.user_id %}
                                                     &nbsp;&nbsp;
-                                                    <a href="{% url 'delete_post' post.id %}"><i class="fa fa-trash" style="color:gray"></i></a>
+                                                    <form method="POST" action="{% url 'delete_post' post.id %}" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-link p-0 border-0 align-baseline" aria-label="Delete post">
+                                                            <i class="fa fa-trash" style="color:gray"></i>
+                                                        </button>
+                                                    </form>
                                                     &nbsp;&nbsp;
-                                                    <a href="{% url 'edit_post' post.id %}"><i class="fa fa-edit" style="color:gray"></i></a>
+                                                    <a href="{% url 'edit_post' post.id %}" aria-label="Edit post"><i class="fa fa-edit" style="color:gray"></i></a>
                                                 {% endif %}
                                             </small>
                                         </div>
@@ -51,27 +63,27 @@
                 <div class="col-4">
                     <br/><br/><br/>
                     {% if profile.profile_image %}
-                        <img src="{{ profile.profile_image.url }}" class="rounded-circle">
+                        <img src="{{ profile.profile_image.url }}" class="rounded-circle" alt="{{ profile.user.username }}">
                         <br/><br/>
                     {% endif %}
                     {% if profile.homepage_link %}
-                        <a href="{{ profile.homepage_link }}" target="_blank"><i class="fa-solid fa-link" style="color:gray"></i></a>
+                        <a href="{{ profile.homepage_link }}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-link" style="color:gray"></i></a>
                     {% endif %}
                     &nbsp;&nbsp;
                     {% if profile.facebook_link %}
-                        <a href="{{ profile.facebook_link }}" target="_blank"><i class="fa-brands fa-facebook-f" style="color:gray"></i></a>
+                        <a href="{{ profile.facebook_link }}" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-facebook-f" style="color:gray"></i></a>
                     {% endif %}
                     &nbsp;&nbsp;
                     {% if profile.instagram_link %}
-                        <a href="{{ profile.instagram_link }}" target="_blank"><i class="fa-brands fa-instagram" style="color:gray"></i></a>
+                        <a href="{{ profile.instagram_link }}" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-instagram" style="color:gray"></i></a>
                     {% endif %}
                     &nbsp;&nbsp;
                     {% if profile.linkedin_link %}
-                        <a href="{{ profile.linkedin_link }}" target="_blank"><i class="fa-brands fa-linkedin-in" style="color:gray"></i></a>
+                        <a href="{{ profile.linkedin_link }}" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-linkedin-in" style="color:gray"></i></a>
                     {% endif %}
                     <br/><br/>
                     {% if profile.profile_bio %}
-                        <p align="justify">{{ profile.profile_bio }}</p>
+                        <p class="text-start">{{ profile.profile_bio }}</p>
                     {% endif %}
                     <br/><br/>
                     <div class="card">
@@ -80,9 +92,14 @@
                             <p class="card-text">
                                 {% for following in profile.follows.all %}
                                     <a href="{% url 'profile' following.user.id %}">@{{ following }}</a>
-                                    <a href="{% url 'unfollow' following.user.id %}">
-                                        <i class="fa fa-user-minus small" style="color:gray"></i>
-                                    </a>
+                                    {% if request.user.id == profile.user.id and following.user.id != request.user.id %}
+                                        <form method="POST" action="{% url 'unfollow' following.user.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-link p-0 border-0 align-baseline" aria-label="Unfollow {{ following }}">
+                                                <i class="fa fa-user-minus small" style="color:gray"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
                                     <br/>
                                 {% endfor %}
                             </p>
@@ -96,16 +113,22 @@
                         <h5 class="card-header">Followed By</h5>
                         <div class="card-body">
                             <p class="card-text">
-                                {% for following in profile.followed_by.all %}
-                                    <a href="{% url 'profile' following.user.id %}">@{{ following }}</a>&nbsp;&nbsp;
-                                    {% if following in profile.follows.all %}
-                                        <a href="{% url 'unfollow' following.user.id %}">
-                                            <i class="fa fa-user-minus small" style="color:gray"></i>
-                                        </a>
+                                {% for follower in profile.followed_by.all %}
+                                    <a href="{% url 'profile' follower.user.id %}">@{{ follower }}</a>&nbsp;&nbsp;
+                                    {% if follower in profile.follows.all %}
+                                        <form method="POST" action="{% url 'unfollow' follower.user.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-link p-0 border-0 align-baseline" aria-label="Unfollow {{ follower }}">
+                                                <i class="fa fa-user-minus small" style="color:gray"></i>
+                                            </button>
+                                        </form>
                                     {% else %}
-                                        <a href="{% url 'follow' following.user.id %}">
-                                            <i class="fa fa-user-plus small" style="color:gray"></i>
-                                        </a>
+                                        <form method="POST" action="{% url 'follow' follower.user.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-link p-0 border-0 align-baseline" aria-label="Follow {{ follower }}">
+                                                <i class="fa fa-user-plus small" style="color:gray"></i>
+                                            </button>
+                                        </form>
                                     {% endif %}
                                     <br/>
                                 {% endfor %}
@@ -120,16 +143,15 @@
                         {% csrf_token %}
                         {% if profile in user.profile.follows.all %}
                             <button class="btn btn-outline-danger" name="follow" value="unfollow" type="submit">
-                                Unfollow @{{ profile.user.username|lower}}
+                                Unfollow @{{ profile.user.username|lower }}
                             </button>
-                        {% else %}
+                        {% elif profile.user.id != request.user.id %}
                             <button class="btn btn-outline-success" name="follow" value="follow" type="submit">
-                                Follow @{{ profile.user.username|lower}}
+                                Follow @{{ profile.user.username|lower }}
                             </button>
                         {% endif %}
                     </form>
                     <br/>
-                    <!-- Check For Correct User -->
                     {% if request.user.id == profile.user.id %}
                         <a href="{% url 'update_user' %}" class="btn btn-outline-secondary">Update Profile</a>
                     {% endif %}
