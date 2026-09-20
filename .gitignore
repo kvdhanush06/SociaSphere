@@ -1,6 +1,14 @@
 .vscode/
 venv/
 __pycache__/
+*.py[cod]
+*.sqlite3
+media/
+staticfiles/
+.env
+.env.*
+!.env.example
+
 Sociasphere1.png
 Sociasphere2.png
 Sociasphere3.png
