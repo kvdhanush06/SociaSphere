@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load security %}
 
 {% block content %}
     {% if profile %}
@@ -53,7 +54,6 @@
                                                 {% endif %}
                                             </small>
                                         </div>
-                                        <br/><br/>
                                     </div>
                                 </div>
                             </div>
@@ -66,21 +66,21 @@
                         <img src="{{ profile.profile_image.url }}" class="rounded-circle" alt="{{ profile.user.username }}">
                         <br/><br/>
                     {% endif %}
-                    {% if profile.homepage_link %}
-                        <a href="{{ profile.homepage_link }}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-link" style="color:gray"></i></a>
-                    {% endif %}
+                    {% with homepage=profile.homepage_link|safe_http_url %}
+                        {% if homepage %}<a href="{{ homepage }}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-link" style="color:gray"></i></a>{% endif %}
+                    {% endwith %}
                     &nbsp;&nbsp;
-                    {% if profile.facebook_link %}
-                        <a href="{{ profile.facebook_link }}" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-facebook-f" style="color:gray"></i></a>
-                    {% endif %}
+                    {% with facebook=profile.facebook_link|safe_http_url %}
+                        {% if facebook %}<a href="{{ facebook }}" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-facebook-f" style="color:gray"></i></a>{% endif %}
+                    {% endwith %}
                     &nbsp;&nbsp;
-                    {% if profile.instagram_link %}
-                        <a href="{{ profile.instagram_link }}" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-instagram" style="color:gray"></i></a>
-                    {% endif %}
+                    {% with instagram=profile.instagram_link|safe_http_url %}
+                        {% if instagram %}<a href="{{ instagram }}" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-instagram" style="color:gray"></i></a>{% endif %}
+                    {% endwith %}
                     &nbsp;&nbsp;
-                    {% if profile.linkedin_link %}
-                        <a href="{{ profile.linkedin_link }}" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-linkedin-in" style="color:gray"></i></a>
-                    {% endif %}
+                    {% with linkedin=profile.linkedin_link|safe_http_url %}
+                        {% if linkedin %}<a href="{{ linkedin }}" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-linkedin-in" style="color:gray"></i></a>{% endif %}
+                    {% endwith %}
                     <br/><br/>
                     {% if profile.profile_bio %}
                         <p class="text-start">{{ profile.profile_bio }}</p>
@@ -95,18 +95,14 @@
                                     {% if request.user.id == profile.user.id and following.user.id != request.user.id %}
                                         <form method="POST" action="{% url 'unfollow' following.user.id %}" class="d-inline">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-link p-0 border-0 align-baseline" aria-label="Unfollow {{ following }}">
-                                                <i class="fa fa-user-minus small" style="color:gray"></i>
-                                            </button>
+                                            <button type="submit" class="btn btn-link p-0 border-0 align-baseline" aria-label="Unfollow {{ following }}"><i class="fa fa-user-minus small" style="color:gray"></i></button>
                                         </form>
                                     {% endif %}
                                     <br/>
                                 {% endfor %}
                             </p>
                         </div>
-                        <div class="card-footer text-end">
-                            <a href="{% url 'follows' profile.user.id %}" class="btn btn-sm btn-outline-secondary">See All...</a>
-                        </div>
+                        <div class="card-footer text-end"><a href="{% url 'follows' profile.user.id %}" class="btn btn-sm btn-outline-secondary">See All...</a></div>
                     </div>
                     <br/>
                     <div class="card">
@@ -118,37 +114,27 @@
                                     {% if follower in profile.follows.all %}
                                         <form method="POST" action="{% url 'unfollow' follower.user.id %}" class="d-inline">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-link p-0 border-0 align-baseline" aria-label="Unfollow {{ follower }}">
-                                                <i class="fa fa-user-minus small" style="color:gray"></i>
-                                            </button>
+                                            <button type="submit" class="btn btn-link p-0 border-0 align-baseline" aria-label="Unfollow {{ follower }}"><i class="fa fa-user-minus small" style="color:gray"></i></button>
                                         </form>
                                     {% else %}
                                         <form method="POST" action="{% url 'follow' follower.user.id %}" class="d-inline">
                                             {% csrf_token %}
-                                            <button type="submit" class="btn btn-link p-0 border-0 align-baseline" aria-label="Follow {{ follower }}">
-                                                <i class="fa fa-user-plus small" style="color:gray"></i>
-                                            </button>
+                                            <button type="submit" class="btn btn-link p-0 border-0 align-baseline" aria-label="Follow {{ follower }}"><i class="fa fa-user-plus small" style="color:gray"></i></button>
                                         </form>
                                     {% endif %}
                                     <br/>
                                 {% endfor %}
                             </p>
                         </div>
-                        <div class="card-footer text-end">
-                            <a href="{% url 'followers' profile.user.id %}" class="btn btn-sm btn-outline-secondary">See All...</a>
-                        </div>
+                        <div class="card-footer text-end"><a href="{% url 'followers' profile.user.id %}" class="btn btn-sm btn-outline-secondary">See All...</a></div>
                     </div>
                     <br/>
                     <form method="POST">
                         {% csrf_token %}
                         {% if profile in user.profile.follows.all %}
-                            <button class="btn btn-outline-danger" name="follow" value="unfollow" type="submit">
-                                Unfollow @{{ profile.user.username|lower }}
-                            </button>
+                            <button class="btn btn-outline-danger" name="follow" value="unfollow" type="submit">Unfollow @{{ profile.user.username|lower }}</button>
                         {% elif profile.user.id != request.user.id %}
-                            <button class="btn btn-outline-success" name="follow" value="follow" type="submit">
-                                Follow @{{ profile.user.username|lower }}
-                            </button>
+                            <button class="btn btn-outline-success" name="follow" value="follow" type="submit">Follow @{{ profile.user.username|lower }}</button>
                         {% endif %}
                     </form>
                     <br/>
