@@ -11,32 +11,36 @@
                     <div class="row">
                         <div class="col-1">
                             {% if post.user.profile.profile_image %}
-                                <img src="{{ post.user.profile.profile_image.url }}" width=50 height=50 class="rounded-circle" alt="{{ post.user.username }}">
+                                <img src="{{ post.user.profile.profile_image.url }}" width="50" height="50" class="rounded-circle" alt="{{ post.user.username }}">
                             {% else %}
-                                <img src="{% static 'images/default_profile_pic.png' %}" width=50 height=50 class="rounded-circle" alt="{{ post.user.username }}">
+                                <img src="{% static 'images/default_profile_pic.png' %}" width="50" height="50" class="rounded-circle" alt="{{ post.user.username }}">
                             {% endif %}
                         </div>
 
                         <div class="col-11">
                             {{ post.body }}<br/>
                             <small class="text-muted">
-                                ({{ post.created_at}}) By
+                                ({{ post.created_at }}) By
                                 @{{ post.user.username }}
                                 - {{ post.number_of_likes }} Likes -
-
-                                {% if user in post.likes.all %}
-                                    <a href="{% url 'post_like' post.id %}">
-                                        <i class="fa-solid fa-heart" style="color:red"></i>
-                                    </a>
-                                {% else %}
-                                    <a href="{% url 'post_like' post.id %}">
-                                        <i class="fa fa-heart-o" style="color:red"></i>
-                                    </a>
+                                {% if user.is_authenticated %}
+                                    <form method="POST" action="{% url 'post_like' post.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-link p-0 border-0 align-baseline" aria-label="Toggle like for post">
+                                            {% if user in post.likes.all %}
+                                                <i class="fa-solid fa-heart" style="color:red"></i>
+                                            {% else %}
+                                                <i class="fa fa-heart-o" style="color:red"></i>
+                                            {% endif %}
+                                        </button>
+                                    </form>
                                 {% endif %}
                                 &nbsp;&nbsp;
-                                <a href="{% url 'share_post' post.id %}" id="share-post">
-                                    <i class="fa-solid fa-share" style="color:gray"></i>
-                                </a>
+                                {% if user.is_authenticated %}
+                                    <button type="button" class="btn btn-link p-0 border-0 align-baseline" id="share-post" aria-label="Copy post link">
+                                        <i class="fa-solid fa-share" style="color:gray"></i>
+                                    </button>
+                                {% endif %}
                             </small>
                         </div>
                     </div>
@@ -50,7 +54,6 @@
                 <form method="POST">
                     {% csrf_token %}
                     {{ form.as_p }}
-
                     <button type="submit" class="btn btn-secondary">Post Post!</button>
                 </form>
             {% endif %}
@@ -58,21 +61,30 @@
     </div>
 </div>
 
+{% if user.is_authenticated %}
 <script>
-    document.getElementById('share-post').addEventListener('click', function(event) {
-        event.preventDefault();
-        fetch(this.href, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            alert(data.message);
-        })
-        .catch(error => console.error('Error:', error));
-    });
+    const shareButton = document.getElementById('share-post');
+    if (shareButton) {
+        shareButton.addEventListener('click', async function() {
+            try {
+                const response = await fetch("{% url 'share_post' post.id %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                });
+                if (!response.ok) throw new Error('Share request failed');
+                const data = await response.json();
+                await navigator.clipboard.writeText(data.url);
+                alert('URL copied to clipboard');
+            } catch (error) {
+                console.error('Could not share post:', error);
+            }
+        });
+    }
 </script>
+{% endif %}
 
 {% endblock %}
