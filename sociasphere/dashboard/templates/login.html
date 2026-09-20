@@ -10,11 +10,14 @@
         <br/>
         <form method="POST" action="{% url 'login' %}">
             {% csrf_token %}
+            {{ form.non_field_errors }}
             <div class="mb-3">
-                <input type="text" class="form-control" name="username" placeholder="Enter Your Username">
+                {{ form.username.errors }}
+                <input type="text" class="form-control" name="username" placeholder="Enter Your Username" autocomplete="username" required>
             </div>
             <div class="mb-3">
-                <input type="password" class="form-control" name="password" placeholder="Enter Your Password">
+                {{ form.password.errors }}
+                <input type="password" class="form-control" name="password" placeholder="Enter Your Password" autocomplete="current-password" required>
             </div>
             <br/>
             <button type="submit" class="btn btn-secondary">Submit</button>

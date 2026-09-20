@@ -13,7 +13,10 @@
         </li>
         {% if user.is_authenticated %}
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+            <form method="POST" action="{% url 'logout' %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="nav-link btn btn-link border-0">Logout</button>
+            </form>
           </li>
         {% else %}
           <li class="nav-item">
@@ -31,16 +34,16 @@
             <li><a class="dropdown-item" href="{% url 'search' %}">Search Posts</a></li>
             <li><a class="dropdown-item" href="{% url 'search_user' %}">Search Users</a></li>
           </ul>
-        </li>  
+        </li>
       </ul>
       {% if user.is_authenticated %}
         <ul class="navbar-nav ml-auto">
           <li class="nav-item">
             <a class="nav-link" href="{% url 'profile' request.user.id %}">
               {% if user.profile.profile_image %}
-                <img src="{{ user.profile.profile_image.url }}" class="rounded-circle" width=30>
+                <img src="{{ user.profile.profile_image.url }}" class="rounded-circle" width="30" alt="Profile Image">
               {% else %}
-                <img src="{% static 'images/default_profile_pic.png' %}" class="rounded-circle" alt="Profile Image" width=30>
+                <img src="{% static 'images/default_profile_pic.png' %}" class="rounded-circle" alt="Profile Image" width="30">
               {% endif %}
             </a>
           </li>
