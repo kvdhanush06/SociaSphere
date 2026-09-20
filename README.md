@@ -68,7 +68,7 @@ The application models users, profiles, posts, followers, following relationship
 
 - Python
 - Django
-- PostgreSQL
+- SQLite
 - HTML/CSS
 - Django Templates
 - Pillow
@@ -85,12 +85,11 @@ The application models users, profiles, posts, followers, following relationship
 
 ```text
 SociaSphere/
-├── users/
-├── profiles/
-├── posts/
-├── templates/
-├── static/
-├── media/
+├── sociasphere/
+│   ├── dashboard/
+│   ├── sociasphere/
+│   ├── templates/
+│   └── static/
 ├── manage.py
 └── README.md
 ```
