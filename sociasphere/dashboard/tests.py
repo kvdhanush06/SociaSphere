@@ -30,16 +30,16 @@ class MutationSecurityTests(TestCase):
         ):
             self.client.force_login(self.user)
             url = reverse(name, args=args) if args else reverse(name)
-            self.assertEqual(self.client.get(url).status_code, 405, name)
+            self.assertEqual(self.client.get(url, secure=True).status_code, 405, name)
 
     def test_delete_post_requires_ownership(self):
         self.client.force_login(self.other_user)
-        response = self.client.post(reverse('delete_post', args=[self.post.pk]))
+        response = self.client.post(reverse('delete_post', args=[self.post.pk]), secure=True)
         self.assertEqual(response.status_code, 302)
         self.assertTrue(Post.objects.filter(pk=self.post.pk).exists())
 
     def test_like_requires_authentication(self):
-        response = self.client.post(reverse('post_like', args=[self.post.pk]))
+        response = self.client.post(reverse('post_like', args=[self.post.pk]), secure=True)
         self.assertEqual(response.status_code, 302)
         self.assertFalse(self.post.likes.filter(pk=self.user.pk).exists())
 
