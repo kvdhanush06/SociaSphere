@@ -1,15 +1,27 @@
-from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from .models import Profile, Post
-from .forms import PostForm, SignUpForm, ProfilePicForm
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpRequest, HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-import pyperclip
+from django.utils.http import url_has_allowed_host_and_scheme
+
+from .forms import PostForm, ProfilePicForm, SignUpForm
+from .models import Post, Profile
 
 
-# Helper function to handle form validation and saving for edit_post
+def safe_redirect(request: HttpRequest, fallback: str = 'home') -> HttpResponse:
+    """Redirect only to a same-host referrer; never trust an arbitrary URL."""
+    referrer = request.META.get('HTTP_REFERER')
+    if referrer and url_has_allowed_host_and_scheme(
+        referrer,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return redirect(referrer)
+    return redirect(fallback)
+
 
 def handle_post_form(request, post):
     form = PostForm(request.POST or None, instance=post)
@@ -17,302 +29,251 @@ def handle_post_form(request, post):
         post = form.save(commit=False)
         post.user = request.user
         post.save()
-        messages.success(request, ("Your Post Has Been Updated!"))
+        messages.success(request, "Your Post Has Been Updated!")
         return redirect('home')
     return form
 
 
 def home(request):
+    form = None
     if request.user.is_authenticated:
         form = PostForm(request.POST or None)
-        if request.method == "POST":
-            if form.is_valid():
-                post = form.save(commit=False)
-                post.user = request.user
-                post.save()
-                messages.success(request, ("Your Post Has Been Posted!"))
-                return redirect('home')
+        if request.method == "POST" and form.is_valid():
+            post = form.save(commit=False)
+            post.user = request.user
+            post.save()
+            messages.success(request, "Your Post Has Been Posted!")
+            return redirect('home')
 
-        posts = Post.objects.all().order_by("-created_at")
-        return render(request, 'home.html', {"posts": posts, "form": form})
-    else:
-        posts = Post.objects.all().order_by("-created_at")
-        return render(request, 'home.html', {"posts": posts})
+    posts = Post.objects.select_related('user', 'user__profile').prefetch_related('likes').order_by("-created_at")
+    context = {"posts": posts}
+    if form is not None:
+        context["form"] = form
+    return render(request, 'home.html', context)
 
 
 def profile_list(request):
-    if request.user.is_authenticated:
-        profiles = Profile.objects.exclude(user=request.user)
-        return render(request, 'profile_list.html', {"profiles": profiles})
-    else:
-        messages.success(
-            request, ("You Must Be Logged In To View This Page..."))
+    if not request.user.is_authenticated:
+        messages.info(request, "You Must Be Logged In To View This Page.")
         return redirect('home')
+    profiles = Profile.objects.exclude(user=request.user).select_related('user')
+    return render(request, 'profile_list.html', {"profiles": profiles})
 
-
-# Helper function to handle follow/unfollow actions
 
 def handle_follow_action(request, pk, action):
-    profile = Profile.objects.get(user_id=pk)
+    if request.method != "POST":
+        return HttpResponse(status=405)
+    profile = get_object_or_404(Profile, user_id=pk)
+    current_profile = request.user.profile
     if action == "unfollow":
-        request.user.profile.follows.remove(profile)
-        messages.success(
-            request, ("You Have Successfully Unfollowed {}"
-                      .format(profile.user.username)))
+        current_profile.follows.remove(profile)
+        messages.success(request, f"You Have Successfully Unfollowed {profile.user.username}")
     elif action == "follow":
-        request.user.profile.follows.add(profile)
-        messages.success(
-            request, ("You Have Successfully Followed {}"
-                      .format(profile.user.username)))
-    request.user.profile.save()
-    return redirect(request.META.get("HTTP_REFERER"))
+        if profile.pk != current_profile.pk:
+            current_profile.follows.add(profile)
+            messages.success(request, f"You Have Successfully Followed {profile.user.username}")
+    else:
+        return HttpResponse(status=400)
+    return safe_redirect(request)
 
 
 def unfollow(request, pk):
-    if request.user.is_authenticated:
-        return handle_follow_action(request, pk, "unfollow")
-    else:
-        messages.success(
-            request, ("You Must Be Logged In To View This Page..."))
+    if not request.user.is_authenticated:
+        messages.info(request, "You Must Be Logged In To View This Page.")
         return redirect('home')
+    return handle_follow_action(request, pk, "unfollow")
 
 
 def follow(request, pk):
-    if request.user.is_authenticated:
-        return handle_follow_action(request, pk, "follow")
-    else:
-        messages.success(
-            request, ("You Must Be Logged In To View This Page..."))
+    if not request.user.is_authenticated:
+        messages.info(request, "You Must Be Logged In To View This Page.")
         return redirect('home')
+    return handle_follow_action(request, pk, "follow")
 
 
 def profile(request, pk):
-    if request.user.is_authenticated:
-        profile = Profile.objects.get(user_id=pk)
-        posts = Post.objects.filter(user_id=pk).order_by("-created_at")
-
-        # Post Form logic
-        if request.method == "POST":
-            # Get current user
-            current_user_profile = request.user.profile
-            # Get form data
-            action = request.POST['follow']
-            # Decide to follow or unfollow
-            if action == "unfollow":
-                current_user_profile.follows.remove(profile)
-            elif action == "follow":
-                current_user_profile.follows.add(profile)
-            # Save the profile
-            current_user_profile.save()
-
-        return render(request, "profile.html", {"profile": profile,
-                                                "posts": posts})
-    else:
-        messages.success(
-            request, ("You Must Be Logged In To View This Page..."))
+    if not request.user.is_authenticated:
+        messages.info(request, "You Must Be Logged In To View This Page.")
         return redirect('home')
 
+    profile_obj = get_object_or_404(Profile.objects.select_related('user'), user_id=pk)
+    posts = (
+        Post.objects.filter(user_id=pk)
+        .select_related('user', 'user__profile')
+        .prefetch_related('likes')
+        .order_by("-created_at")
+    )
 
-# Helper function to handle followers/follows views
+    if request.method == "POST":
+        action = request.POST.get('follow')
+        if action == "unfollow":
+            request.user.profile.follows.remove(profile_obj)
+        elif action == "follow" and profile_obj.pk != request.user.profile.pk:
+            request.user.profile.follows.add(profile_obj)
+        else:
+            return HttpResponse(status=400)
+        request.user.profile.save()
+        return redirect('profile', pk=pk)
+
+    return render(request, "profile.html", {"profile": profile_obj, "posts": posts})
+
 
 def handle_follow_view(request, pk, view_name):
-    if request.user.id == pk:
-        profiles = Profile.objects.get(user_id=pk)
-        return render(request, '{}.html'.format(view_name),
-                      {"profiles": profiles})
-    else:
-        messages.success(request, ("That's Not Your Profile Page..."))
+    if request.user.id != pk:
+        messages.info(request, "That's Not Your Profile Page.")
         return redirect('home')
+    profile_obj = get_object_or_404(Profile, user_id=pk)
+    return render(request, f'{view_name}.html', {"profiles": profile_obj})
 
 
 def followers(request, pk):
-    if request.user.is_authenticated:
-        return handle_follow_view(request, pk, 'followers')
-    else:
-        messages.success(
-            request, ("You Must Be Logged In To View This Page..."))
+    if not request.user.is_authenticated:
+        messages.info(request, "You Must Be Logged In To View This Page.")
         return redirect('home')
+    return handle_follow_view(request, pk, 'followers')
 
 
 def follows(request, pk):
-    if request.user.is_authenticated:
-        return handle_follow_view(request, pk, 'follows')
-    else:
-        messages.success(
-            request, ("You Must Be Logged In To View This Page..."))
+    if not request.user.is_authenticated:
+        messages.info(request, "You Must Be Logged In To View This Page.")
         return redirect('home')
+    return handle_follow_view(request, pk, 'follows')
 
 
 def login_user(request):
-    if request.method == "POST":
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            messages.success(
-                request, ("You Have Been Logged In! Post Something!"))
-            return redirect('home')
-        else:
-            messages.success(
-                request, ("There was an error logging in. Please Try Again..."))
-            return redirect('login')
-
-    else:
-        return render(request, "login.html", {})
+    if request.user.is_authenticated:
+        return redirect('home')
+    form = AuthenticationForm(request, data=request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        login(request, form.get_user())
+        messages.success(request, "You Have Been Logged In! Post Something!")
+        return redirect('home')
+    return render(request, "login.html", {"form": form})
 
 
 def logout_user(request):
+    if request.method != "POST":
+        return HttpResponse(status=405)
     logout(request)
-    messages.success(
-        request, ("You Have Been Logged Out."))
+    messages.success(request, "You Have Been Logged Out.")
     return redirect('home')
 
 
 def register_user(request):
-    form = SignUpForm()
-    if request.method == "POST":
-        form = SignUpForm(request.POST)
-        if form.is_valid():
-            form.save()
-            username = form.cleaned_data['username']
-            password = form.cleaned_data['password1']
-            # first_name = form.cleaned_data['first_name']
-            # second_name = form.cleaned_data['second_name']
-            # email = form.cleaned_data['email']
-            # Log in user
-            user = authenticate(username=username, password=password)
-            login(request, user)
-            messages.success(
-                request, ("You have successfully registered! Welcome!"))
-            return redirect('home')
-
+    form = SignUpForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        user = form.save()
+        login(request, user)
+        messages.success(request, "You have successfully registered! Welcome!")
+        return redirect('home')
     return render(request, "register.html", {'form': form})
 
 
-# Helper function to handle form validation and saving for update_user
-
 def handle_user_forms(request, current_user, profile_user):
-    user_form = SignUpForm(request.POST or None,
-                           request.FILES or None, instance=current_user)
+    user_form = SignUpForm(
+        request.POST or None,
+        request.FILES or None,
+        instance=current_user,
+    )
     profile_form = ProfilePicForm(
-        request.POST or None, request.FILES or None, instance=profile_user)
-    if user_form.is_valid() and profile_form.is_valid():
+        request.POST or None,
+        request.FILES or None,
+        instance=profile_user,
+    )
+    if request.method == "POST" and user_form.is_valid() and profile_form.is_valid():
         user_form.save()
         profile_form.save()
         login(request, current_user)
-        messages.success(request, ("Your Profile Has Been Updated!"))
+        messages.success(request, "Your Profile Has Been Updated!")
         return redirect('home')
     return user_form, profile_form
 
 
 def update_user(request):
-    if request.user.is_authenticated:
-        current_user = User.objects.get(id=request.user.id)
-        profile_user = Profile.objects.get(user__id=request.user.id)
-        user_form, profile_form = handle_user_forms(
-            request, current_user, profile_user)
-        return render(request, "update_user.html", {'user_form': user_form,
-                                                    'profile_form': profile_form})
-    else:
-        messages.success(
-            request, ("You Must Be Logged In To View That Page..."))
+    if not request.user.is_authenticated:
+        messages.info(request, "You Must Be Logged In To View That Page.")
         return redirect('home')
+    current_user = get_object_or_404(User, id=request.user.id)
+    profile_user = get_object_or_404(Profile, user_id=request.user.id)
+    user_form, profile_form = handle_user_forms(request, current_user, profile_user)
+    return render(request, "update_user.html", {'user_form': user_form, 'profile_form': profile_form})
 
 
 def post_like(request, pk):
-    if request.user.is_authenticated:
-        post = get_object_or_404(Post, id=pk)
-        if post.likes.filter(id=request.user.id):
-            post.likes.remove(request.user)
-        else:
-            post.likes.add(request.user)
-
-        return redirect(request.META.get("HTTP_REFERER"))
-
-    else:
-        messages.success(
-            request, ("You Must Be Logged In To View That Page..."))
+    if not request.user.is_authenticated:
+        messages.info(request, "You Must Be Logged In To View This Page.")
         return redirect('home')
+    if request.method != "POST":
+        return HttpResponse(status=405)
+    post = get_object_or_404(Post, id=pk)
+    if post.likes.filter(id=request.user.id).exists():
+        post.likes.remove(request.user)
+    else:
+        post.likes.add(request.user)
+    return safe_redirect(request)
 
 
 def post_show(request, pk):
     post = get_object_or_404(Post, id=pk)
-    if post:
-        return render(request, "show_post.html", {'post': post})
-    else:
-        messages.success(request, ("That Post Does Not Exist..."))
-        return redirect('home')
+    return render(request, "show_post.html", {'post': post})
 
 
 def delete_post(request, pk):
-    if request.user.is_authenticated:
-        post = get_object_or_404(Post, id=pk)
-        # Check to see if you own the post
-        if request.user.username == post.user.username:
-            # Delete The Post
-            post.delete()
-
-            messages.success(request, ("The Post Has Been Deleted!"))
-            return redirect(request.META.get("HTTP_REFERER"))
-        else:
-            messages.success(request, ("You Don't Own That Post!!"))
-            return redirect('home')
-
-    else:
-        messages.success(request, ("Please Log In To Continue..."))
-        return redirect(request.META.get("HTTP_REFERER"))
+    if not request.user.is_authenticated:
+        messages.info(request, "Please Log In To Continue.")
+        return redirect('home')
+    if request.method != "POST":
+        return HttpResponse(status=405)
+    post = get_object_or_404(Post, id=pk)
+    if post.user_id != request.user.id:
+        messages.error(request, "You Don't Own That Post.")
+        return redirect('home')
+    post.delete()
+    messages.success(request, "The Post Has Been Deleted!")
+    return safe_redirect(request)
 
 
 def edit_post(request, pk):
-    if request.user.is_authenticated:
-        post = get_object_or_404(Post, id=pk)
-        if request.user.username == post.user.username:
-            form = handle_post_form(request, post)
-            return render(request, "edit_post.html", {'form': form,
-                                                      'post': post})
-        else:
-            messages.success(request, ("You Don't Own That Post!!"))
-            return redirect('home')
-    else:
-        messages.success(request, ("Please Log In To Continue..."))
+    if not request.user.is_authenticated:
+        messages.info(request, "Please Log In To Continue.")
         return redirect('home')
+    post = get_object_or_404(Post, id=pk)
+    if post.user_id != request.user.id:
+        messages.error(request, "You Don't Own That Post.")
+        return redirect('home')
+    form = handle_post_form(request, post)
+    return render(request, "edit_post.html", {'form': form, 'post': post})
 
 
 def search(request):
     if request.method == "POST":
-        # Grab the form field input
-        search = request.POST['search']
-        # Search the database
-        searched = Post.objects.filter(body__contains=search)
-
-        return render(request, 'search.html', {'search': search,
-                                               'searched': searched})
-    else:
-        return render(request, 'search.html', {})
+        search_term = request.POST.get('search', '').strip()
+        if not search_term:
+            return render(request, 'search.html', {'search': '', 'searched': Post.objects.none()})
+        searched = (
+            Post.objects.filter(body__icontains=search_term)
+            .select_related('user', 'user__profile')
+            .prefetch_related('likes')[:100]
+        )
+        return render(request, 'search.html', {'search': search_term, 'searched': searched})
+    return render(request, 'search.html', {})
 
 
 def search_user(request):
     if request.method == "POST":
-        # Grab the form field input
-        search = request.POST['search']
-        # Search the database
-        searched = User.objects.filter(username__contains=search)
-
-        return render(request, 'search_user.html', {'search': search,
-                                                    'searched': searched})
-    else:
-        return render(request, 'search_user.html', {})
+        search_term = request.POST.get('search', '').strip()
+        if not search_term:
+            return render(request, 'search_user.html', {'search': '', 'searched': User.objects.none()})
+        searched = User.objects.filter(username__icontains=search_term)[:100]
+        return render(request, 'search_user.html', {'search': search_term, 'searched': searched})
+    return render(request, 'search_user.html', {})
 
 
 def share_post(request, pk):
-    if request.user.is_authenticated:
-        post_url = request.build_absolute_uri(reverse('post_show', args=[pk]))
-
-        pyperclip.copy(post_url)
-        messages.success(
-            request, ("The URL has been copied to the clipboard!"))
-        return JsonResponse({'message': 'URL copied to clipboard'})
-    else:
-        messages.success(request, ("You Must Be Logged In To Share Posts..."))
-        return redirect('home')
+    if not request.user.is_authenticated:
+        return JsonResponse({'message': 'Authentication required'}, status=401)
+    if request.method != "POST":
+        return JsonResponse({'message': 'Method not allowed'}, status=405)
+    post = get_object_or_404(Post, id=pk)
+    post_url = request.build_absolute_uri(reverse('post_show', args=[post.pk]))
+    return JsonResponse({'url': post_url})
